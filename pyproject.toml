@@ -30,8 +30,6 @@ Repository = "https://github.com/cssf-ropos/irls-sdk-python"
 [tool.uv]
 package = true
 
-[tool.uv.sources]
-
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
