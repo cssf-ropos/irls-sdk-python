@@ -490,10 +490,6 @@ See the position sensor implementation as a reference.
 - pydantic >= 2.0
 - httpx >= 0.24
 
-## License
-
-MIT License - see LICENSE file for details
-
 ## Support
 
 For issues, questions, or contributions, please open an issue on GitHub or contact the maintainers.
