@@ -186,6 +186,33 @@ reading = PositionSensorReadingDTO(
 response = client.position.send(sensor_slug="rovins", data=reading)
 ```
 
+### CTDs
+
+CTDs including AML CTD and Seabird CTD. 
+
+#### AML Example
+
+```python
+from datetime import datetime, timezone
+from irls import IRLSClient
+from irls.dto import AMLCTDSensorReadingDTO
+
+client = IRLSClient(base_url="https://irls.example.com")
+
+reading = AMLCTDSensorReadingDTO(
+    date="2024-11-13",
+    time="14:40:38.17",
+    conductivity=27.993,
+    temperature_ctd=1.075,
+    dissolved_o2=463.55,
+    temperature_do=1.12,
+    pressure=25.54,
+)
+
+response = client.position.send(sensor_slug="aml-ctd", data=reading)
+
+```
+
 ### Async Client
 
 For high-performance applications or when sending many readings concurrently:
@@ -295,6 +322,28 @@ The sensor's SRID is configured in the IRLS admin interface. Always send coordin
 | `hdop` | float | ≥ 0 | Horizontal Dilution of Precision |
 | `raw_data` | dict | - | Raw sensor data (JSON object) |
 
+### AMLCTDSensorReadingDTO
+
+#### Required Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `date` | string | Date when reading was recorded (yyyy-mm-dd) |
+| `time` | string | Time when reading was recorded (hh:mm:ss.ss) |
+| `conductivity` | float | Conductivity (mS/cm) |
+| `temperature_ctd` | float | Temperature measured by CTD (C) |
+| `pressure` | float | Dissolved O2 (umol/l) |
+| `dissolved_o2` | float | Temperature DO (C) |
+| `temperature_do` | float | Pressure (dbar) |
+
+#### Optional Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `v1` | float | Optional voltage |
+| `v2` | float | Optional volgate |
+
+
 ## Examples
 
 See the [`examples/`](examples/) directory for more usage examples:
@@ -303,6 +352,7 @@ See the [`examples/`](examples/) directory for more usage examples:
 - [`full_navigation.py`](examples/full_navigation.py) - Complete INS/navigation data
 - [`async_example.py`](examples/async_example.py) - Async client usage
 - [`error_handling.py`](examples/error_handling.py) - Error handling patterns
+- ['aml_ctd_ex.py'](examples/aml_ctd_ex.py) - AML CTD reading
 
 ## Development
 

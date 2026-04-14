@@ -1,5 +1,6 @@
 """Main IRLS client."""
 
+from irls.sensors.aml_ctd import AMLCTDSensorClient, AsyncAMLCTDSensorClient
 from irls.sensors.position import AsyncPositionSensorClient, PositionSensorClient
 
 
@@ -41,6 +42,19 @@ class IRLSClient:
 
         # Initialize sensor clients
         self._position = PositionSensorClient(base_url=base_url, timeout=timeout, verbose=verbose)
+        self._amlctd = AMLCTDSensorClient(base_url=base_url, timeout=timeout, verbose=verbose)
+
+    @property
+    def amlctd(self) -> AMLCTDSensorClient:
+        """Access the CTD sensor client.
+
+        Returns:
+            AMLCTDSensorClient for sending CTD sensor data
+        Example:
+            >>> client = IRLSClient(base_url="http://127.0.0.1:8000")
+            >>> response = client.amlctd.send(sensor_slug="rovins", data=reading)
+        """
+        return self._amlctd
 
     @property
     def position(self) -> PositionSensorClient:
@@ -99,6 +113,19 @@ class AsyncIRLSClient:
         self._position = AsyncPositionSensorClient(
             base_url=base_url, timeout=timeout, verbose=verbose
         )
+        self._amlctd = AsyncAMLCTDSensorClient(base_url=base_url, timeout=timeout, verbose=verbose)
+
+    @property
+    def amlctd(self) -> AsyncAMLCTDSensorClient:
+        """Access the async CTD sensor client.
+
+        Returns:
+            AsyncAMLCTDSensorClient for sending CTD sensor data
+        Example:
+            >>> client = AsyncIRLSClient(base_url="http://127.0.0.1:8000")
+            >>> response = await client.amlctd.send(sensor_slug="rovins", data=reading)
+        """
+        return self._amlctd
 
     @property
     def position(self) -> AsyncPositionSensorClient:
