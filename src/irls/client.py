@@ -15,7 +15,7 @@ class IRLSClient:
         timeout: Request timeout in seconds (default: 30.0)
         verbose: Enable verbose logging for debugging (default: False)
 
-    Example:
+    Example for position sensor:
         >>> from irls import IRLSClient
         >>> from irls.dto import PositionSensorReadingDTO
         >>> from datetime import datetime, timezone

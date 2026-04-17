@@ -65,10 +65,11 @@ class AMLCTDSensorClient:
             >>>
             >>> client = AMLCTDSensorClient(base_url="http://127.0.0.1:8000")
             >>> reading = AMLCTDSensorReadingDTO(
+            ...     recorded_at=datetime.now(timezone.utc),
             ...     date="2024-11-13",
             ...     time="14:40:38.17",
             ...     conductivity=0.000,
-            ...     temp_ctd=1.075,
+            ...     temperature_ctd=1.075,
             ...     dissolved_o2=463.55,
             ...     temp_do=1.12,
             ...     pressure=0.54,
@@ -83,7 +84,8 @@ class AMLCTDSensorClient:
 
         if self.verbose:
             logger.debug(f"Sending AML CTD reading to {url}")
-            logger.debug(f"Payload: {payload}")
+            logger.debug(f"DTO recorded_at: {data.recorded_at}")
+            logger.debug(f"Full Payload: {payload}")
 
         try:
             headers = {
@@ -191,12 +193,13 @@ class AsyncAMLCTDSensorClient:
             >>> async def main():
             ...     client = AsyncAMLCTDSensorClient(base_url="http://127.0.0.1:8000")
             ...     reading = AMLCTDSensorReadingDTO(
+            ...         recorded_at=datetime.now(timezone.utc),
             ...         date="2024-11-13",
             ...         time="14:40:38.17",
             ...         conductivity=0.000,
-            ...         temp_ctd=1.075,
+            ...         temperature_ctd=1.075,
             ...         dissolved_o2=463.55,
-            ...         temp_do=1.12,
+            ...         temperature_do=1.12,
             ...         pressure=0.54
             ...     )
             ...     response = await client.send(sensor_slug="aml-ctd", data=reading)

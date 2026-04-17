@@ -11,6 +11,7 @@ client = IRLSClient(base_url="http://127.0.0.1:8000", verbose=True)
 
 # Create an AML CTD reading
 reading = AMLCTDSensorReadingDTO(
+    recorded_at=datetime.now(timezone.utc),
     date="2024-11-13",
     time="14:40:38.17",
     conductivity=27.993,

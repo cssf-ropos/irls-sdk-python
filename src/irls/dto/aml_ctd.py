@@ -1,8 +1,9 @@
 """Data Transfer Objects for CTD sensor readings."""
 
-from typing import Optional
+from typing import Optional, Dict
+from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class AMLCTDSensorReadingDTO(BaseModel):
@@ -41,8 +42,13 @@ class AMLCTDSensorReadingDTO(BaseModel):
         ...     v2=0.00
         ... )
     """
-
+    model_config = ConfigDict(
+        json_encoders={datetime: lambda v: v.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"}
+    )
     # Required fields
+    recorded_at: datetime = Field(
+        ..., description="Timestamp when the reading was recorded (ISO 8601 with milliseconds)"
+    )
     date: str = Field(..., description="Date when the reading was recorded (yyyy-mm-dd)")
     time: str = Field(..., description="Time when the reading was recorded (hh:mm:ss.ss)")
     conductivity: float = Field(None, ge=0, le=100, description="Conductivity in mS/cm")
