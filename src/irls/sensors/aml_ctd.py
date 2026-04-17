@@ -1,10 +1,10 @@
-"""Position sensor client for IRLS SDK."""
+"""CTD sensor client for IRLS SDK."""
 
 import logging
 
 import httpx
 
-from irls.dto.position import PositionSensorReadingDTO, SensorReadingResponse
+from irls.dto.aml_ctd import AMLCTDSensorReadingDTO, AMLCTDSensorReadingResponse
 from irls.exceptions import (
     APIDisabledError,
     RequestError,
@@ -16,10 +16,10 @@ from irls.exceptions import (
 logger = logging.getLogger(__name__)
 
 
-class PositionSensorClient:
-    """Client for interacting with IRLS position sensor API.
+class AMLCTDSensorClient:
+    """Client for interacting with IRLS AML CTD sensor API.
 
-    This client handles sending position sensor readings to IRLS.
+    This client handles sending AML CTD sensor readings to IRLS.
     It supports synchronous operations using httpx.
 
     Args:
@@ -42,15 +42,15 @@ class PositionSensorClient:
                 )
                 logger.addHandler(handler)
 
-    def send(self, sensor_slug: str, data: PositionSensorReadingDTO) -> SensorReadingResponse:
-        """Send a position sensor reading to IRLS.
+    def send(self, sensor_slug: str, data: AMLCTDSensorReadingDTO) -> AMLCTDSensorReadingResponse:
+        """Send an AML CTD sensor reading to IRLS.
 
         Args:
-            sensor_slug: The sensor slug (e.g., "rovins", "gps-primary")
-            data: The position sensor reading data
+            sensor_slug: The sensor slug (e.g., "aml-ctd")
+            data: The AML CTD sensor reading data
 
         Returns:
-            SensorReadingResponse with the stored reading ID
+            AMLCTDSensorReadingResponse with the stored reading ID
 
         Raises:
             SensorNotFoundError: If the sensor slug doesn't exist
@@ -61,27 +61,31 @@ class PositionSensorClient:
 
         Example:
             >>> from datetime import datetime, timezone
-            >>> from irls.dto import PositionSensorReadingDTO
+            >>> from irls.dto import AMLCTDSensorReadingDTO
             >>>
-            >>> client = PositionSensorClient(base_url="http://127.0.0.1:8000")
-            >>> reading = PositionSensorReadingDTO(
+            >>> client = AMLCTDSensorClient(base_url="http://127.0.0.1:8000")
+            >>> reading = AMLCTDSensorReadingDTO(
             ...     recorded_at=datetime.now(timezone.utc),
-            ...     x=-122.4194,
-            ...     y=37.7749,
-            ...     altitude=10.5,
-            ...     heading=45.2
+            ...     date="2024-11-13",
+            ...     time="14:40:38.17",
+            ...     conductivity=0.000,
+            ...     temperature_ctd=1.075,
+            ...     dissolved_o2=463.55,
+            ...     temp_do=1.12,
+            ...     pressure=0.54,
             ... )
-            >>> response = client.send(sensor_slug="rovins", data=reading)
+            >>> response = client.send(sensor_slug="aml-ctd", data=reading)
             >>> print(f"Stored reading ID: {response.id}")
         """
-        url = f"{self.base_url}/api/sensors/position/{sensor_slug}/data"
+        url = f"{self.base_url}/api/sensors/ctd/{sensor_slug}/data"
 
         # Convert DTO to JSON dict
         payload = data.model_dump(mode="json", exclude_none=True)
 
         if self.verbose:
-            logger.debug(f"Sending position reading to {url}")
-            logger.debug(f"Payload: {payload}")
+            logger.debug(f"Sending AML CTD reading to {url}")
+            logger.debug(f"DTO recorded_at: {data.recorded_at}")
+            logger.debug(f"Full Payload: {payload}")
 
         try:
             headers = {
@@ -129,7 +133,7 @@ class PositionSensorClient:
 
                 # Success - parse response
                 response_data = response.json()
-                return SensorReadingResponse(**response_data)
+                return AMLCTDSensorReadingResponse(**response_data)
 
         except httpx.TimeoutException as e:
             raise RequestError(f"Request timed out after {self.timeout}s") from e
@@ -137,8 +141,8 @@ class PositionSensorClient:
             raise RequestError(f"Request failed: {str(e)}") from e
 
 
-class AsyncPositionSensorClient:
-    """Async client for interacting with IRLS position sensor API.
+class AsyncAMLCTDSensorClient:
+    """Async client for interacting with IRLS AML CTD sensor API.
 
     This client provides async operations for high-performance applications.
 
@@ -162,15 +166,17 @@ class AsyncPositionSensorClient:
                 )
                 logger.addHandler(handler)
 
-    async def send(self, sensor_slug: str, data: PositionSensorReadingDTO) -> SensorReadingResponse:
-        """Send a position sensor reading to IRLS asynchronously.
+    async def send(
+        self, sensor_slug: str, data: AMLCTDSensorReadingDTO
+    ) -> AMLCTDSensorReadingResponse:
+        """Send an AML CTD sensor reading to IRLS asynchronously.
 
         Args:
-            sensor_slug: The sensor slug (e.g., "rovins", "gps-primary")
-            data: The position sensor reading data
+            sensor_slug: The sensor slug (e.g., "aml-ctd")
+            data: The AML CTD sensor reading data
 
         Returns:
-            SensorReadingResponse with the stored reading ID
+            AMLCTDSensorReadingResponse with the stored reading ID
 
         Raises:
             SensorNotFoundError: If the sensor slug doesn't exist
@@ -182,28 +188,32 @@ class AsyncPositionSensorClient:
         Example:
             >>> import asyncio
             >>> from datetime import datetime, timezone
-            >>> from irls.dto import PositionSensorReadingDTO
+            >>> from irls.dto import AMLCTDSensorReadingDTO
             >>>
             >>> async def main():
-            ...     client = AsyncPositionSensorClient(base_url="http://127.0.0.1:8000")
-            ...     reading = PositionSensorReadingDTO(
+            ...     client = AsyncAMLCTDSensorClient(base_url="http://127.0.0.1:8000")
+            ...     reading = AMLCTDSensorReadingDTO(
             ...         recorded_at=datetime.now(timezone.utc),
-            ...         x=-122.4194,
-            ...         y=37.7749,
-            ...         altitude=10.5
+            ...         date="2024-11-13",
+            ...         time="14:40:38.17",
+            ...         conductivity=0.000,
+            ...         temperature_ctd=1.075,
+            ...         dissolved_o2=463.55,
+            ...         temperature_do=1.12,
+            ...         pressure=0.54
             ...     )
-            ...     response = await client.send(sensor_slug="rovins", data=reading)
+            ...     response = await client.send(sensor_slug="aml-ctd", data=reading)
             ...     print(f"Stored reading ID: {response.id}")
             >>>
             >>> asyncio.run(main())
         """
-        url = f"{self.base_url}/api/sensors/position/{sensor_slug}/data"
+        url = f"{self.base_url}/api/sensors/ctd/{sensor_slug}/data"
 
         # Convert DTO to JSON dict
         payload = data.model_dump(mode="json", exclude_none=True)
 
         if self.verbose:
-            logger.debug(f"Sending position reading to {url}")
+            logger.debug(f"Sending AML CTD sensor reading to {url}")
             logger.debug(f"Payload: {payload}")
 
         try:
@@ -250,7 +260,7 @@ class AsyncPositionSensorClient:
 
                 # Success - parse response
                 response_data = response.json()
-                return SensorReadingResponse(**response_data)
+                return AMLCTDSensorReadingResponse(**response_data)
 
         except httpx.TimeoutException as e:
             raise RequestError(f"Request timed out after {self.timeout}s") from e
