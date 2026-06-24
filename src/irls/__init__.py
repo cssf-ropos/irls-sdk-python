@@ -1,7 +1,7 @@
 """IRLS SDK - Python SDK for IRLS 3.0 logging service."""
 
 from irls.client import AsyncIRLSClient, IRLSClient
-from irls.dto import PositionSensorReadingDTO, SensorReadingResponse
+from irls.dto import CTDSensorReadingDTO, ExtraMeasurementDTO, PositionSensorReadingDTO, SensorReadingResponse, ScientificUnit
 from irls.exceptions import (
     APIDisabledError,
     IRLSError,
@@ -20,6 +20,9 @@ __all__ = [
     # DTOs
     "PositionSensorReadingDTO",
     "SensorReadingResponse",
+    "CTDSensorReadingDTO",
+    "ExtraMeasurementDTO",
+    "ScientificUnit",
     # Exceptions
     "IRLSError",
     "SensorNotFoundError",

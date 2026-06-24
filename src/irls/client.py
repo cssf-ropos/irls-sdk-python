@@ -1,5 +1,6 @@
 """Main IRLS client."""
 
+from irls.sensors.ctd import AsyncCTDSensorClient, CTDSensorClient
 from irls.sensors.position import AsyncPositionSensorClient, PositionSensorClient
 
 
@@ -41,6 +42,7 @@ class IRLSClient:
 
         # Initialize sensor clients
         self._position = PositionSensorClient(base_url=base_url, timeout=timeout, verbose=verbose)
+        self._ctd = CTDSensorClient(base_url=base_url, timeout=timeout, verbose=verbose)
 
     @property
     def position(self) -> PositionSensorClient:
@@ -54,6 +56,19 @@ class IRLSClient:
             >>> response = client.position.send(sensor_slug="rovins", data=reading)
         """
         return self._position
+
+    @property
+    def ctd(self) -> CTDSensorClient:
+        """Access the CTD sensor client.
+
+        Returns:
+            CTDSensorClient for sending CTD sensor data
+
+        Example:
+            >>> client = IRLSClient(base_url="http://127.0.0.1:8000")
+            >>> response = client.ctd.send(sensor_slug="sbe-911-starboard", data=reading)
+        """
+        return self._ctd
 
 
 class AsyncIRLSClient:
@@ -99,6 +114,7 @@ class AsyncIRLSClient:
         self._position = AsyncPositionSensorClient(
             base_url=base_url, timeout=timeout, verbose=verbose
         )
+        self._ctd = AsyncCTDSensorClient(base_url=base_url, timeout=timeout, verbose=verbose)
 
     @property
     def position(self) -> AsyncPositionSensorClient:
@@ -112,3 +128,16 @@ class AsyncIRLSClient:
             >>> response = await client.position.send(sensor_slug="rovins", data=reading)
         """
         return self._position
+
+    @property
+    def ctd(self) -> AsyncCTDSensorClient:
+        """Access the async CTD sensor client.
+
+        Returns:
+            AsyncCTDSensorClient for sending CTD sensor data
+
+        Example:
+            >>> client = AsyncIRLSClient(base_url="http://127.0.0.1:8000")
+            >>> response = await client.ctd.send(sensor_slug="sbe-911-starboard", data=reading)
+        """
+        return self._ctd
