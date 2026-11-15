@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field, field_serializer
 
 
 class PositionSensorReadingDTO(BaseModel):
@@ -29,10 +29,6 @@ class PositionSensorReadingDTO(BaseModel):
         ...     status="GPS_FIX"
         ... )
     """
-
-    model_config = ConfigDict(
-        json_encoders={datetime: lambda v: v.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"}
-    )
 
     # Required fields
     recorded_at: datetime = Field(
@@ -95,6 +91,10 @@ class PositionSensorReadingDTO(BaseModel):
     raw_data: Optional[Dict[str, Any]] = Field(
         None, description="Raw sensor data for debugging (JSON object)"
     )
+
+    @field_serializer("recorded_at", when_used="json")
+    def _serialize_recorded_at(self, value: datetime) -> str:
+        return value.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
 
 
 class SensorReadingResponse(BaseModel):
