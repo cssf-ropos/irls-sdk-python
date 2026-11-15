@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Debug script to check IRLS API endpoint."""
 
-import httpx
 from datetime import datetime, timezone
+
+import httpx
 
 # Test the raw endpoint
 url = "http://127.0.0.1:8000/api/sensors/position/rovins/data"

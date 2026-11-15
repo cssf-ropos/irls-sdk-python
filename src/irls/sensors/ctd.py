@@ -1,7 +1,6 @@
 """CTD sensor client for IRLS SDK."""
 
 import logging
-from typing import Optional
 
 import httpx
 

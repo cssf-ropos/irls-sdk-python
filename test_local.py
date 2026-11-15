@@ -6,7 +6,6 @@ from datetime import datetime, timezone
 from irls import IRLSClient
 from irls.dto import PositionSensorReadingDTO
 from irls.exceptions import (
-    SensorDisabledError,
     SensorNotFoundError,
     ValidationError,
 )
@@ -86,7 +85,7 @@ def main() -> None:
         )
 
         response = client.position.send(sensor_slug="rovins", data=reading)
-        print(f"✗ Should have failed validation!")
+        print("✗ Should have failed validation!")
     except ValidationError as e:
         print(f"✓ Correctly caught validation error: {e}")
     except Exception as e:
@@ -103,7 +102,7 @@ def main() -> None:
         )
 
         response = client.position.send(sensor_slug="nonexistent-sensor", data=reading)
-        print(f"✗ Should have failed with sensor not found!")
+        print("✗ Should have failed with sensor not found!")
     except SensorNotFoundError as e:
         print(f"✓ Correctly caught sensor not found: {e}")
     except Exception as e:
