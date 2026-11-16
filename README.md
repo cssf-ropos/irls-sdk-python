@@ -1,103 +1,40 @@
 # IRLS Python SDK
 
-Python SDK for CSSF's IRLS 3.0. This SDK provides a clean, type-safe interface for sending sensor data to IRLS, with support for position sensors, scientific sensors, and imaging sensors.
+Python SDK for CSSF's IRLS 3.0. It provides a type-safe client for sending sensor data to
+IRLS: one client per IRLS sensor type, currently **position** and **CTD**.
+
+The SDK speaks the IRLS API, not any one instrument's format: it has no device names in it.
+Parsing a particular device's output (a PHINS, an NMEA GPS, an AML CTD) belongs in a driver
+such as [irls3-driver](https://github.com/cssf-ropos/irls3-driver).
 
 ## Features
 
-- 🔒 **Type-safe** - Full type hints with Pydantic DTOs
-- ✅ **Validated** - Client-side validation before sending data
-- ⚡ **Async support** - Both synchronous and asynchronous clients
-- 🎯 **Clean API** - Simple, intuitive interface
-- 📝 **Well documented** - Comprehensive examples and docstrings
-- 🚀 **Fast** - Built on httpx for high performance
+- **Type-safe**: full type hints with Pydantic DTOs
+- **Validated**: client-side validation before sending data
+- **Sync and async**: `IRLSClient` and `AsyncIRLSClient`
+- **Built on httpx**
 
 ## Installation
 
-### From PyPI (when published)
+Requires Python 3.11+.
 
 ```bash
-# Using pip
-pip install irls-sdk
-
 # Using uv
-uv add irls-sdk
-```
+uv add git+https://github.com/cssf-ropos/irls-sdk-python.git
 
-### From GitHub
-
-```bash
 # Using pip
-pip install git+https://github.com/yourusername/irls-sdk-python.git
+pip install git+https://github.com/cssf-ropos/irls-sdk-python.git
 
-# Using uv
-uv add git+https://github.com/yourusername/irls-sdk-python.git
-
-# Install a specific branch
-uv add git+https://github.com/yourusername/irls-sdk-python.git@branch-name
-
-# Install a specific commit
-uv add git+https://github.com/yourusername/irls-sdk-python.git@commit-hash
+# A specific branch or commit
+uv add git+https://github.com/cssf-ropos/irls-sdk-python.git@branch-or-commit
 ```
 
-### Local Development
-
-If you're developing the SDK locally and want to use it in another project:
-
-**Using uv (recommended):**
+To use a local checkout from another project (changes apply without reinstalling):
 
 ```bash
-# In your sensor driver project
 cd /path/to/my-sensor-driver
-uv add /path/to/irls-sdk-python
-
-# This adds to pyproject.toml:
-# [project]
-# dependencies = ["irls-sdk"]
-#
-# [tool.uv.sources]
-# irls-sdk = { path = "/path/to/irls-sdk-python" }
+uv add --editable /path/to/irls-sdk-python   # or: pip install -e /path/to/irls-sdk-python
 ```
-
-**Using pip (editable install):**
-
-```bash
-# In your sensor driver project
-cd /path/to/my-sensor-driver
-pip install -e /path/to/irls-sdk-python
-```
-
-**Example workflow:**
-
-```bash
-# Terminal 1: Working on the SDK
-cd ~/code/irls-sdk-python
-# Make changes to src/irls/...
-# Changes are immediately available to projects using it
-
-# Terminal 2: Using the SDK in your sensor driver
-cd ~/code/my-sensor-driver
-uv add ~/code/irls-sdk-python
-
-# Create a simple test
-cat > test.py << 'EOF'
-from irls import IRLSClient
-from irls.dto import PositionSensorReadingDTO
-from datetime import datetime, timezone
-
-client = IRLSClient(base_url="http://127.0.0.1:8000")
-reading = PositionSensorReadingDTO(
-    recorded_at=datetime.now(timezone.utc),
-    x=-122.4194, y=37.7749, altitude=10.5
-)
-response = client.position.send(sensor_slug="rovins", data=reading)
-print(f"Sent reading ID: {response.id}")
-EOF
-
-# Run it
-uv run python test.py
-```
-
-The local path setup means any changes you make to the SDK are **immediately reflected** in your project without reinstalling!
 
 ## Quick Start
 
@@ -106,21 +43,16 @@ from datetime import datetime, timezone
 from irls import IRLSClient
 from irls.dto import PositionSensorReadingDTO
 
-# Initialize client
-client = IRLSClient(base_url="https://your-irls-instance.com")
+client = IRLSClient(base_url="http://localhost:8000")
 
-# Create a reading
 reading = PositionSensorReadingDTO(
     recorded_at=datetime.now(timezone.utc),
     x=-122.4194,  # Longitude for WGS84
-    y=37.7749,     # Latitude for WGS84
+    y=37.7749,    # Latitude for WGS84
     altitude=10.5,
-    satellite_count=12,
-    status="GPS_FIX"
 )
 
-# Send to IRLS
-response = client.position.send(sensor_slug="gps-primary", data=reading)
+response = client.position.send(sensor_slug="rovins", data=reading)
 print(f"Reading stored with ID: {response.id}")
 ```
 
@@ -128,28 +60,8 @@ print(f"Reading stored with ID: {response.id}")
 
 ### Position Sensors
 
-Position sensors include GPS, INS, USBL, and other navigation systems.
-
-#### Minimal Example
-
-```python
-from datetime import datetime, timezone
-from irls import IRLSClient
-from irls.dto import PositionSensorReadingDTO
-
-client = IRLSClient(base_url="https://irls.example.com")
-
-reading = PositionSensorReadingDTO(
-    recorded_at=datetime.now(timezone.utc),
-    x=-122.4194,
-    y=37.7749,
-    altitude=10.5
-)
-
-response = client.position.send(sensor_slug="rovins", data=reading)
-```
-
-#### Full Navigation Data
+Position sensors include GPS, INS, USBL and other navigation systems. Only `recorded_at`,
+`x`, `y` and `altitude` are required; everything else is optional:
 
 ```python
 reading = PositionSensorReadingDTO(
@@ -180,31 +92,57 @@ reading = PositionSensorReadingDTO(
     hdop=1.2,
     status="INS_NAVIGATION",
     # Raw data for debugging
-    raw_data={"mode": "RTK_FIXED"}
+    raw_data={"mode": "RTK_FIXED"},
 )
 
 response = client.position.send(sensor_slug="rovins", data=reading)
 ```
 
+### CTD Sensors
+
+Only `recorded_at`, `temperature`, `conductivity` and `pressure` are required. Anything a
+device measures beyond the standard fields goes in `extra_measurements`:
+
+```python
+from irls.dto import CTDSensorReadingDTO, ExtraMeasurementDTO
+
+reading = CTDSensorReadingDTO(
+    recorded_at=datetime.now(timezone.utc),
+    temperature=4.82,
+    conductivity=3.12,
+    pressure=512.5,
+    salinity=34.89,
+    extra_measurements=[
+        ExtraMeasurementDTO(name="fluorescence", value=0.18, unit="micrograms_per_litre"),
+        ExtraMeasurementDTO(name="ph", value=7.92, unit="ph"),
+    ],
+)
+
+response = client.ctd.send(sensor_slug="ctd", data=reading)
+```
+
+An extra measurement's `unit` must be one of the `ScientificUnit` values (`from irls.dto import ScientificUnit`).
+
 ### Async Client
 
-For high-performance applications or when sending many readings concurrently:
+For sending many readings concurrently:
 
 ```python
 import asyncio
+from datetime import datetime, timezone
 from irls import AsyncIRLSClient
 from irls.dto import PositionSensorReadingDTO
 
 async def main():
-    client = AsyncIRLSClient(base_url="https://irls.example.com")
-    
+    client = AsyncIRLSClient(base_url="http://localhost:8000")
+
     reading = PositionSensorReadingDTO(
         recorded_at=datetime.now(timezone.utc),
         x=-122.4194,
         y=37.7749,
-        altitude=10.5
+        altitude=10.5,
     )
-    
+
     response = await client.position.send(sensor_slug="rovins", data=reading)
     print(f"Reading ID: {response.id}")
 
@@ -215,10 +153,11 @@ asyncio.run(main())
 
 ```python
 from irls.exceptions import (
-    SensorNotFoundError,
-    SensorDisabledError,
-    ValidationError,
+    APIDisabledError,
     RequestError,
+    SensorDisabledError,
+    SensorNotFoundError,
+    ValidationError,
 )
 
 try:
@@ -227,35 +166,34 @@ except SensorNotFoundError as e:
     print(f"Sensor '{e.sensor_slug}' not found")
 except SensorDisabledError as e:
     print(f"Sensor '{e.sensor_slug}' is disabled")
+except APIDisabledError:
+    print("The IRLS API is turned off (archive mode)")
 except ValidationError as e:
     print(f"Validation error: {e.errors}")
 except RequestError as e:
     print(f"Request failed: {e}")
 ```
 
+All of these inherit from `IRLSError`.
+
 ### Configuration
 
 ```python
 client = IRLSClient(
-    base_url="https://irls.example.com",
+    base_url="http://localhost:8000",
     timeout=30.0,    # Request timeout in seconds
-    verbose=True     # Enable debug logging
+    verbose=True,    # Enable debug logging
 )
 ```
 
 ## Coordinate Systems
 
-The SDK supports multiple coordinate reference systems (SRID):
+Position readings are sent in the coordinate system configured on the sensor in IRLS
+(its SRID); IRLS converts them to WGS84 for storage.
 
-- **WGS84 (SRID 4326)** - Default GPS coordinates
-  - `x` = longitude (-180 to 180)
-  - `y` = latitude (-90 to 90)
-- **UTM Zones** - Universal Transverse Mercator
-  - `x` = easting (meters)
-  - `y` = northing (meters)
-- **Custom Projections** - Any EPSG-defined coordinate system
-
-The sensor's SRID is configured in the IRLS admin interface. Always send coordinates in the format expected by your sensor's configured SRID.
+- **WGS84 (SRID 4326)**: `x` = longitude (-180 to 180), `y` = latitude (-90 to 90)
+- **UTM zones**: `x` = easting (metres), `y` = northing (metres)
+- **Other projections**: any EPSG-defined coordinate system
 
 ## Field Reference
 
@@ -268,7 +206,7 @@ The sensor's SRID is configured in the IRLS admin interface. Always send coordin
 | `recorded_at` | datetime | Timestamp when reading was recorded (UTC) |
 | `x` | float | X coordinate (longitude for WGS84, easting for UTM) |
 | `y` | float | Y coordinate (latitude for WGS84, northing for UTM) |
-| `altitude` | float | Altitude in meters (MSL) |
+| `altitude` | float | Altitude in metres (MSL) |
 
 #### Optional Fields
 
@@ -281,12 +219,12 @@ The sensor's SRID is configured in the IRLS admin interface. Always send coordin
 | `vertical_speed` | float | - | Vertical speed in m/s |
 | `forward_speed` | float | - | Forward speed in m/s |
 | `lateral_speed` | float | - | Lateral speed in m/s |
-| `altitude_above_ground` | float | ≥ 0 | AGL in meters |
+| `altitude_above_ground` | float | ≥ 0 | AGL in metres |
 | `course_over_ground` | float | 0-360 | COG in degrees |
 | `north_velocity` | float | - | North velocity in m/s |
 | `east_velocity` | float | - | East velocity in m/s |
-| `position_stddev` | float | ≥ 0 | Position std dev in meters |
-| `altitude_stddev` | float | ≥ 0 | Altitude std dev in meters |
+| `position_stddev` | float | ≥ 0 | Position std dev in metres |
+| `altitude_stddev` | float | ≥ 0 | Altitude std dev in metres |
 | `heading_stddev` | float | ≥ 0 | Heading std dev in degrees |
 | `roll_stddev` | float | ≥ 0 | Roll std dev in degrees |
 | `pitch_stddev` | float | ≥ 0 | Pitch std dev in degrees |
@@ -295,201 +233,108 @@ The sensor's SRID is configured in the IRLS admin interface. Always send coordin
 | `hdop` | float | ≥ 0 | Horizontal Dilution of Precision |
 | `raw_data` | dict | - | Raw sensor data (JSON object) |
 
+### CTDSensorReadingDTO
+
+#### Required Fields
+
+| Field | Type | Range | Description |
+|-------|------|-------|-------------|
+| `recorded_at` | datetime | - | Timestamp when reading was recorded (UTC) |
+| `temperature` | float | - | Water temperature (°C) |
+| `conductivity` | float | - | Electrical conductivity (S/m or mS/cm) |
+| `pressure` | float | ≥ 0 | Water pressure (dbar) |
+
+#### Optional Fields
+
+| Field | Type | Range | Description |
+|-------|------|-------|-------------|
+| `salinity` | float | ≥ 0 | Practical salinity (PSU) |
+| `dissolved_oxygen` | float | ≥ 0 | Dissolved oxygen (µmol/L) |
+| `sound_velocity` | float | ≥ 0 | Speed of sound in water (m/s) |
+| `turbidity` | float | ≥ 0 | Turbidity (NTU) |
+| `density` | float | - | Water density (kg/m³) |
+| `status` | str | max 50 | Sensor status (e.g., "OK", "WARN") |
+| `raw_data` | dict | - | Raw sensor data (JSON object) |
+| `extra_measurements` | list[ExtraMeasurementDTO] | - | Other measurements: `name` (max 100), `value`, `unit` (a `ScientificUnit`) |
+
 ## Examples
 
-See the [`examples/`](examples/) directory for more usage examples:
+See [`examples/`](examples/):
 
-- [`simple_gps.py`](examples/simple_gps.py) - Basic GPS reading
-- [`full_navigation.py`](examples/full_navigation.py) - Complete INS/navigation data
-- [`async_example.py`](examples/async_example.py) - Async client usage
-- [`error_handling.py`](examples/error_handling.py) - Error handling patterns
+- [`simple_gps.py`](examples/simple_gps.py): basic GPS reading
+- [`full_navigation.py`](examples/full_navigation.py): complete INS/navigation data
+- [`ctd_example.py`](examples/ctd_example.py): CTD readings, with extra measurements
+- [`async_example.py`](examples/async_example.py): async client usage
+- [`error_handling.py`](examples/error_handling.py): error handling patterns
+
+Run one with `uv run python examples/simple_gps.py`.
 
 ## Development
 
-This project uses [uv](https://github.com/astral-sh/uv) for fast, reliable Python dependency management.
-
-### Getting Started
-
-**1. Install uv** (if you don't have it)
+This project uses [uv](https://docs.astral.sh/uv/).
 
 ```bash
-# On macOS/Linux
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# On Windows
-powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
-
-# Or with pip
-pip install uv
-```
-
-**2. Clone and Setup**
-
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/irls-sdk-python.git
+git clone git@github.com:cssf-ropos/irls-sdk-python.git
 cd irls-sdk-python
-
-# Install dependencies (creates .venv automatically)
 uv sync
-
-# Activate the virtual environment (optional - uv run handles this)
-source .venv/bin/activate  # On macOS/Linux
-.venv\Scripts\activate     # On Windows
-```
-
-**3. Run Examples**
-
-```bash
-# Run any example
-uv run python examples/simple_gps.py
-
-# Or if you activated the venv
-python examples/simple_gps.py
 ```
 
 ### Development Commands
 
 ```bash
-# Run tests (unit tests don't require IRLS API to be running)
-uv run pytest
-
-# Run only unit tests (fast, no API needed)
-uv run pytest tests/unit/
-
-# Run integration tests (requires IRLS API running at http://127.0.0.1:8000)
-uv run pytest tests/integration/
-
-# Run with coverage
+uv run pytest                    # Unit tests; integration tests skip without IRLS_URL
 uv run pytest --cov=irls --cov-report=term-missing
-
-# Format code
-uv run black src/
-
-# Lint
-uv run ruff check src/
-
-# Type check
-uv run mypy src/
-
-# Add a new dependency
-uv add package-name
-
-# Add a dev dependency
-uv add --dev package-name
+uv run black src/ tests/         # Format
+uv run ruff check src/ tests/    # Lint
+uv run mypy src/                 # Type check
 ```
+
+### Testing Against a Local IRLS
+
+The integration tests in `tests/integration/` run against a live IRLS when `IRLS_URL` is
+set. The target needs the sensors from irls-3's `LocalSensorSeeder` (which
+`php artisan migrate --seed` includes):
+
+```bash
+IRLS_URL=http://localhost:8000 uv run pytest tests/integration/
+```
+
+`test_local.py` is a manual script that sends readings to `http://127.0.0.1:8000` and
+prints the results: `uv run python test_local.py`.
+
+To test the SDK, the driver and IRLS together, use `bin/test e2e` in
+[irls-home](https://github.com/cssf-ropos/irls-home).
 
 ### Project Structure
 
 ```
 irls-sdk-python/
-├── src/irls/              # Main SDK package
+├── src/irls/              # SDK package
 │   ├── dto/               # Data Transfer Objects (DTOs)
-│   ├── sensors/           # Sensor-specific clients
-│   ├── client.py          # Main IRLSClient and AsyncIRLSClient
-│   └── exceptions.py      # Custom exception classes
+│   ├── sensors/           # One client per sensor type
+│   ├── client.py          # IRLSClient and AsyncIRLSClient
+│   └── exceptions.py      # Exception classes
 ├── examples/              # Usage examples
-├── tests/                 # Test suite
+├── tests/
 │   ├── unit/              # Unit tests
-│   ├── integration/       # Integration tests
+│   ├── integration/       # Tests against a live IRLS
 │   └── fixtures/          # Test fixtures
-├── pyproject.toml         # Project configuration and dependencies
-└── README.md              # This file
+└── pyproject.toml
 ```
 
-### Making Changes
+### Adding a Sensor Type
 
-1. Create a new branch for your feature
-2. Make your changes in `src/irls/`
-3. Add tests in `tests/`
-4. Run the test suite: `uv run pytest`
-5. Format and lint: `uv run black src/ && uv run ruff check src/`
-6. Submit a pull request
+The SDK mirrors the IRLS API, so a new sensor type starts with a new endpoint in irls-3.
+IRLS only adds one when a sensor type doesn't fit an existing endpoint; a new device of an
+existing type needs a driver change, not an SDK change. To add one:
 
-### Testing Changes in Another Project
+1. Add a DTO in `src/irls/dto/`
+2. Add sync and async clients in `src/irls/sensors/`
+3. Wire them into `IRLSClient` and `AsyncIRLSClient`
 
-If you're developing the SDK and want to test it in another project before publishing:
-
-```bash
-# In your sensor driver project
-cd /path/to/my-sensor-driver
-
-# Add the local SDK as a dependency
-uv add /path/to/irls-sdk-python
-
-# Now you can import and use it
-# from irls import IRLSClient
-```
-
-Changes to the SDK will be immediately available in your project without reinstalling.
-
-### Testing Against a Local IRLS Instance
-
-The repository includes a manual integration test script:
-
-```bash
-# Start your IRLS API (in another terminal)
-cd /path/to/irls-3
-php artisan serve
-
-# Run the integration test
-cd /path/to/irls-sdk-python
-uv run python test_local.py
-```
-
-This script tests:
-
-- Sending minimal readings
-- Sending full readings with all fields
-- Error handling (sensor not found, validation errors)
-- Client-side validation
-
-**Note**: Unit tests in `tests/unit/` don't require the API running and can be run anytime with `uv run pytest tests/unit/`.
-
-### Building and Publishing
-
-```bash
-# Build the package
-uv build
-
-# Publish to PyPI (requires credentials)
-uv publish
-
-# Or publish to TestPyPI first
-uv publish --publish-url https://test.pypi.org/legacy/
-```
-
-## Requirements
-
-- Python 3.10+
-- pydantic >= 2.0
-- httpx >= 0.24
+The CTD implementation is a recent, complete reference.
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
-
-### Future Sensor Types
-
-The SDK is designed to be extended with additional sensor types:
-
-- **Scientific Sensors** - pH meters, temperature sensors, etc.
-- **Imaging Sensors** - Cameras, imaging systems
-
-When these endpoints are added to the IRLS API, extending the SDK is straightforward:
-
-1. Add a new DTO in `src/irls/dto/`
-2. Add a new client in `src/irls/sensors/`
-3. Wire it into the main `IRLSClient`
-
-See the position sensor implementation as a reference.
-
-## Requirements
-
-- Python 3.10+
-- pydantic >= 2.0
-- httpx >= 0.24
-
-## Support
-
-For issues, questions, or contributions, please open an issue on GitHub or contact the maintainers.
+Open an issue or a pull request. This repo is public: never commit internal hostnames,
+credentials or ship data.
