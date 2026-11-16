@@ -102,7 +102,20 @@ def test_position_sensor_reading_json_serialization():
     assert json_data["y"] == 37.7749
     assert json_data["altitude"] == 10.5
     assert json_data["heading"] == 45.2
-    assert "recorded_at" in json_data
+    assert json_data["recorded_at"] == "2025-12-07T19:00:00.123Z"
+
+
+def test_position_sensor_reading_recorded_at_truncates_to_milliseconds():
+    """The API expects ISO 8601 UTC with exactly three fractional digits."""
+    reading = PositionSensorReadingDTO(
+        recorded_at=datetime(2025, 12, 7, 19, 0, 0, 123456, tzinfo=timezone.utc),
+        x=0.0,
+        y=0.0,
+        altitude=0.0,
+    )
+
+    assert reading.model_dump(mode="json")["recorded_at"] == "2025-12-07T19:00:00.123Z"
+    assert '"recorded_at":"2025-12-07T19:00:00.123Z"' in reading.model_dump_json()
 
 
 def test_sensor_reading_response():

@@ -6,10 +6,10 @@ from datetime import datetime, timezone
 from irls import IRLSClient
 from irls.dto import PositionSensorReadingDTO
 from irls.exceptions import (
+    RequestError,
     SensorDisabledError,
     SensorNotFoundError,
     ValidationError,
-    RequestError,
 )
 
 
@@ -56,8 +56,8 @@ def main() -> None:
             altitude=10.5,
             heading=400,  # Invalid! Must be 0-360
         )
-    except Exception as e:
-        print(f"  ✗ Pydantic validation error: Invalid heading value")
+    except Exception:
+        print("  ✗ Pydantic validation error: Invalid heading value")
 
     # Example 4: Server-side validation error
     print("\nExample 4: Handling server validation errors...")
@@ -86,8 +86,8 @@ def main() -> None:
             altitude=10.5,
         )
         bad_client.position.send(sensor_slug="rovins", data=reading)
-    except RequestError as e:
-        print(f"  ✗ Network error: Connection failed")
+    except RequestError:
+        print("  ✗ Network error: Connection failed")
 
 
 if __name__ == "__main__":

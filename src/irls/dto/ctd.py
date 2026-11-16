@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field, field_serializer
 
 from irls.dto.common import ScientificUnit
 
@@ -17,7 +17,9 @@ class ExtraMeasurementDTO(BaseModel):
 
     name: str = Field(..., max_length=100, description="Measurement name (e.g., 'fluorescence')")
     value: float = Field(..., description="Numeric measurement value")
-    unit: ScientificUnit = Field(..., description="Scientific unit — must be a valid ScientificUnit value")
+    unit: ScientificUnit = Field(
+        ..., description="Scientific unit — must be a valid ScientificUnit value"
+    )
 
 
 class CTDSensorReadingDTO(BaseModel):
@@ -37,10 +39,6 @@ class CTDSensorReadingDTO(BaseModel):
         ... )
     """
 
-    model_config = ConfigDict(
-        json_encoders={datetime: lambda v: v.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"}
-    )
-
     # Required fields
     recorded_at: datetime = Field(
         ..., description="Timestamp when the reading was recorded (ISO 8601 with milliseconds)"
@@ -54,9 +52,7 @@ class CTDSensorReadingDTO(BaseModel):
     dissolved_oxygen: Optional[float] = Field(
         None, ge=0, description="Dissolved oxygen concentration (µmol/L)"
     )
-    sound_velocity: Optional[float] = Field(
-        None, ge=0, description="Speed of sound in water (m/s)"
-    )
+    sound_velocity: Optional[float] = Field(None, ge=0, description="Speed of sound in water (m/s)")
     turbidity: Optional[float] = Field(None, ge=0, description="Water turbidity (NTU)")
     density: Optional[float] = Field(None, description="Water density (kg/m³)")
     status: Optional[str] = Field(
@@ -70,3 +66,7 @@ class CTDSensorReadingDTO(BaseModel):
     extra_measurements: Optional[List[ExtraMeasurementDTO]] = Field(
         None, description="Custom measurements for auxiliary sensors (fluorescence, PAR, pH, etc.)"
     )
+
+    @field_serializer("recorded_at", when_used="json")
+    def _serialize_recorded_at(self, value: datetime) -> str:
+        return value.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"

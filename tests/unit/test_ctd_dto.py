@@ -113,3 +113,14 @@ def test_ctd_reading_json_serialization():
     assert len(payload["extra_measurements"]) == 1
     assert payload["extra_measurements"][0]["unit"] == "micrograms_per_litre"
     assert "salinity" not in payload  # excluded because None
+
+
+def test_ctd_reading_recorded_at_serializes_as_utc_milliseconds():
+    reading = CTDSensorReadingDTO(
+        recorded_at=datetime(2025, 12, 7, 19, 0, 0, 123456, tzinfo=timezone.utc),
+        temperature=4.82,
+        conductivity=3.12,
+        pressure=512.5,
+    )
+
+    assert reading.model_dump(mode="json")["recorded_at"] == "2025-12-07T19:00:00.123Z"
